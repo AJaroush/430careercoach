@@ -255,3 +255,4 @@ For support or questions, please open an issue in the repository.
 ---
 
 **Note**: This is a frontend-only application. For production use, you'll need to integrate with a backend API for user authentication, data persistence, and AI-powered recommendations.
+# 430careercoach
