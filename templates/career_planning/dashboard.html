@@ -1,0 +1,188 @@
+{% extends 'cv_analysis/base.html' %}
+
+{% block title %}Career Dashboard - CareerCoach{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Career Dashboard</h1>
+                <p class="text-gray-600 mt-2">Track your career development progress and manage your learning journey.</p>
+            </div>
+            <a href="{% url 'generate_career_plan' %}" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Generate New Plan
+            </a>
+        </div>
+    </div>
+
+    {% if latest_plan %}
+        <!-- Current Plan Overview -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">{{ latest_plan.title }}</h2>
+                    <p class="text-gray-600">{{ latest_plan.description }}</p>
+                </div>
+                <a href="{% url 'career_plan_detail' latest_plan.id %}" class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center">
+                    View Details
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6">
+                    <div class="flex items-center">
+                        <div class="bg-blue-500 rounded-lg p-3 mr-4">
+                            <i class="fas fa-book text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-blue-900">{{ learning_items|length }}</p>
+                            <p class="text-blue-700 text-sm">Learning Items</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6">
+                    <div class="flex items-center">
+                        <div class="bg-green-500 rounded-lg p-3 mr-4">
+                            <i class="fas fa-chart-line text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-green-900">{{ skill_gaps|length }}</p>
+                            <p class="text-green-700 text-sm">Skill Gaps</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6">
+                    <div class="flex items-center">
+                        <div class="bg-purple-500 rounded-lg p-3 mr-4">
+                            <i class="fas fa-flag text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-purple-900">{{ milestones|length }}</p>
+                            <p class="text-purple-700 text-sm">Milestones</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-6">
+                    <div class="flex items-center">
+                        <div class="bg-orange-500 rounded-lg p-3 mr-4">
+                            <i class="fas fa-calendar text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-orange-900">{{ latest_plan.created_at|date:"M d" }}</p>
+                            <p class="text-orange-700 text-sm">Created</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Learning Items -->
+            {% if learning_items %}
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Learning Items</h3>
+                <div class="space-y-3">
+                    {% for item in learning_items %}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center">
+                            <div class="bg-indigo-100 rounded-lg p-2 mr-4">
+                                <i class="fas fa-{% if item.item_type == 'course' %}graduation-cap{% elif item.item_type == 'certification' %}certificate{% elif item.item_type == 'practice' %}code{% elif item.item_type == 'reading' %}book{% elif item.item_type == 'workshop' %}users{% else %}star{% endif %} text-indigo-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">{{ item.title }}</h4>
+                                <p class="text-sm text-gray-600">{{ item.description|truncatechars:60 }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="px-3 py-1 text-xs font-medium rounded-full 
+                                {% if item.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif item.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                {% elif item.status == 'paused' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ item.get_status_display }}
+                            </span>
+                            <span class="px-3 py-1 text-xs font-medium rounded-full 
+                                {% if item.priority == 'high' %}bg-red-100 text-red-800
+                                {% elif item.priority == 'medium' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-green-100 text-green-800{% endif %}">
+                                {{ item.get_priority_display }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Skill Gaps -->
+            {% if skill_gaps %}
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Skill Development Areas</h3>
+                <div class="space-y-3">
+                    {% for gap in skill_gaps %}
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-medium text-gray-900">{{ gap.skill_name }}</h4>
+                            <span class="text-sm text-gray-600">{{ gap.current_level|title }} → {{ gap.target_level|title }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full" style="width: {{ gap.progress_percentage }}%"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">{{ gap.progress_percentage }}% complete</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- No Plan State -->
+        <div class="text-center py-16">
+            <div class="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-rocket text-3xl text-indigo-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Ready to Start Your Career Journey?</h2>
+            <p class="text-gray-600 mb-8 max-w-md mx-auto">Generate your first personalized career development plan based on your CV analysis and career goals.</p>
+            <a href="{% url 'generate_career_plan' %}" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-8 rounded-xl text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center">
+                <i class="fas fa-magic mr-3"></i>
+                Generate Your Career Plan
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- All Plans -->
+    {% if career_plans|length > 1 %}
+    <div class="bg-white rounded-2xl shadow-xl p-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">All Career Plans</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for plan in career_plans %}
+            <div class="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                <h4 class="font-semibold text-gray-900 mb-2">{{ plan.title }}</h4>
+                <p class="text-sm text-gray-600 mb-4">{{ plan.description|truncatechars:80 }}</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">{{ plan.created_at|date:"M d, Y" }}</span>
+                    <a href="{% url 'career_plan_detail' plan.id %}" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+                        View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+

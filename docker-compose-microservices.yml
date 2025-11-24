@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # CV Analysis Microservice
+  cv-analysis:
+    image: careercoach-backend:latest
+    container_name: cv-analysis-service
+    ports:
+      - "8001:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=career_growth_app.settings
+      - SERVICE_NAME=cv-analysis
+    command: >
+      sh -c "
+      python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./media:/app/media
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Career Planning Microservice
+  career-planning:
+    image: careercoach-backend:latest
+    container_name: career-planning-service
+    ports:
+      - "8002:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=career_growth_app.settings
+      - SERVICE_NAME=career-planning
+    command: >
+      sh -c "
+      python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./media:/app/media
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Progress Tracking Microservice
+  progress-tracking:
+    image: careercoach-backend:latest
+    container_name: progress-tracking-service
+    ports:
+      - "8003:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=career_growth_app.settings
+      - SERVICE_NAME=progress-tracking
+    command: >
+      sh -c "
+      python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./media:/app/media
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # User Management Microservice
+  user-management:
+    image: careercoach-backend:latest
+    container_name: user-management-service
+    ports:
+      - "8004:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=career_growth_app.settings
+      - SERVICE_NAME=user-management
+    command: >
+      sh -c "
+      python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./media:/app/media
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+networks:
+  microservices-network:
+    driver: bridge
+

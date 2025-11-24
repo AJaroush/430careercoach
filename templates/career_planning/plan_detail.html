@@ -1,0 +1,172 @@
+{% extends 'cv_analysis/base.html' %}
+
+{% block title %}{{ plan.title }} - CareerCoach{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ plan.title }}</h1>
+                <p class="text-gray-600 mt-2">{{ plan.description }}</p>
+            </div>
+            <a href="{% url 'career_planning_dashboard' %}" class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Career Goals -->
+    {% if plan.career_goals %}
+    <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <div class="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg p-3 mr-4">
+                <i class="fas fa-bullseye text-white text-xl"></i>
+            </div>
+            Career Goals
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for goal in plan.career_goals %}
+            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6">
+                <h3 class="font-semibold text-blue-900 mb-2">{{ goal.title|default:"Career Goal" }}</h3>
+                <p class="text-blue-700 text-sm">{{ goal.description|default:goal }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Learning Path -->
+    {% if learning_items %}
+    <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <div class="bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-3 mr-4">
+                <i class="fas fa-book text-white text-xl"></i>
+            </div>
+            Learning Path
+        </h2>
+        <div class="space-y-4">
+            {% for item in learning_items %}
+            <div class="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start">
+                        <div class="bg-indigo-100 rounded-lg p-3 mr-4">
+                            <i class="fas fa-{% if item.item_type == 'course' %}graduation-cap{% elif item.item_type == 'certification' %}certificate{% elif item.item_type == 'practice' %}code{% elif item.item_type == 'reading' %}book{% elif item.item_type == 'workshop' %}users{% else %}star{% endif %} text-indigo-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ item.title }}</h3>
+                            <p class="text-gray-600 mb-3">{{ item.description }}</p>
+                            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                <span><i class="fas fa-clock mr-1"></i>{{ item.duration }}</span>
+                                <span><i class="fas fa-tag mr-1"></i>{{ item.get_item_type_display }}</span>
+                                {% if item.cost %}
+                                <span><i class="fas fa-dollar-sign mr-1"></i>${{ item.cost }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="px-3 py-1 text-xs font-medium rounded-full 
+                            {% if item.priority == 'high' %}bg-red-100 text-red-800
+                            {% elif item.priority == 'medium' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ item.get_priority_display }}
+                        </span>
+                        <span class="px-3 py-1 text-xs font-medium rounded-full 
+                            {% if item.status == 'completed' %}bg-green-100 text-green-800
+                            {% elif item.status == 'in_progress' %}bg-blue-100 text-blue-800
+                            {% elif item.status == 'paused' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ item.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                {% if item.url %}
+                <div class="mt-4">
+                    <a href="{{ item.url }}" target="_blank" class="text-indigo-600 hover:text-indigo-700 font-medium text-sm flex items-center">
+                        <i class="fas fa-external-link-alt mr-2"></i>
+                        View Resource
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Skill Gaps -->
+    {% if skill_gaps %}
+    <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-3 mr-4">
+                <i class="fas fa-chart-line text-white text-xl"></i>
+            </div>
+            Skill Development Areas
+        </h2>
+        <div class="space-y-6">
+            {% for gap in skill_gaps %}
+            <div class="border border-gray-200 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">{{ gap.skill_name }}</h3>
+                    <div class="flex items-center space-x-3">
+                        <span class="px-3 py-1 text-xs font-medium rounded-full 
+                            {% if gap.priority == 'high' %}bg-red-100 text-red-800
+                            {% elif gap.priority == 'medium' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ gap.get_priority_display }}
+                        </span>
+                        <span class="text-sm text-gray-600">{{ gap.current_level|title }} → {{ gap.target_level|title }}</span>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300" style="width: {{ gap.progress_percentage }}%"></div>
+                </div>
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                    <span>{{ gap.progress_percentage }}% complete</span>
+                    <span>{{ gap.target_level|title }} level</span>
+                </div>
+                {% if gap.notes %}
+                <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <p class="text-sm text-gray-700">{{ gap.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommendations -->
+    {% if plan.recommendations %}
+    <div class="bg-white rounded-2xl shadow-xl p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg p-3 mr-4">
+                <i class="fas fa-lightbulb text-white text-xl"></i>
+            </div>
+            Recommendations
+        </h2>
+        <div class="space-y-4">
+            {% for recommendation in plan.recommendations %}
+            <div class="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-6">
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle text-orange-500 mr-3 mt-1"></i>
+                    <p class="text-orange-800">{{ recommendation }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+

@@ -1,0 +1,28 @@
+name: careercoach-backend
+
+services:
+  # Django Backend API Gateway - Single service on port 8000
+  backend:
+    image: careercoach-backend:latest
+    container_name: careercoach-backend-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=career_growth_app.settings
+    command: >
+      sh -c "
+      python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./media:/app/media
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+networks:
+  backend-network:
+    driver: bridge
+
+

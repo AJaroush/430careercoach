@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: careercoach-backend
+  labels:
+    app: careercoach-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: careercoach-backend
+  template:
+    metadata:
+      labels:
+        app: careercoach-backend
+    spec:
+      containers:
+      - name: careercoach-backend
+        image: careercoach-backend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "career_growth_app.settings"
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            python manage.py migrate --noinput
+            gunicorn --bind 0.0.0.0:8000 career_growth_app.wsgi:application
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+

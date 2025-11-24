@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cv-analysis-service
+  labels:
+    app: cv-analysis-service
+    microservice: cv-analysis
+spec:
+  type: NodePort
+  ports:
+  - port: 8000
+    targetPort: 8000
+    nodePort: 30090
+    protocol: TCP
+    name: http
+  selector:
+    app: cv-analysis-service
+

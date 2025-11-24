@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-management-service
+  labels:
+    app: user-management-service
+    microservice: user-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-management-service
+  template:
+    metadata:
+      labels:
+        app: user-management-service
+        microservice: user-management
+    spec:
+      containers:
+      - name: user-management
+        image: careercoach-backend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "career_growth_app.settings"
+        - name: SERVICE_NAME
+          value: "user-management"
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            python manage.py migrate --noinput
+            gunicorn --bind 0.0.0.0:8000 career_growth_app.wsgi:application
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+

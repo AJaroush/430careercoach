@@ -1,0 +1,125 @@
+{% extends 'cv_analysis/base.html' %}
+
+{% block title %}Upload CV - CareerCoach{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow-xl rounded-2xl p-8">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mb-6">
+                <i class="fas fa-file-upload text-2xl text-white"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Upload Your CV</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Upload your resume and let our AI analyze your skills, experience, and career potential to create a personalized development plan.</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="border-2 border-dashed border-indigo-300 rounded-2xl p-12 text-center hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-300 group">
+                <div class="mb-6">
+                    <i class="fas fa-cloud-upload-alt text-6xl text-indigo-400 group-hover:text-indigo-500 transition-colors"></i>
+                </div>
+                <div class="mb-6">
+                    <label for="cv_file" class="cursor-pointer">
+                        <span class="text-xl font-semibold text-gray-700 group-hover:text-indigo-600 transition-colors">Choose your CV file</span>
+                        <input type="file" id="cv_file" name="cv_file" accept=".pdf,.docx,.doc" class="hidden" required>
+                    </label>
+                </div>
+                <p class="text-sm text-gray-500 mb-4">Supported formats: PDF, DOCX, DOC (Max 10MB)</p>
+                <div class="inline-flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium">
+                    <i class="fas fa-shield-alt mr-2"></i>
+                    Your data is secure and private
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-indigo-500 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-indigo-800 mb-3">What we analyze:</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-indigo-700">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-indigo-500 mr-2"></i>
+                                Skills and technical expertise
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-indigo-500 mr-2"></i>
+                                Years of experience
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-indigo-500 mr-2"></i>
+                                Education level and background
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-indigo-500 mr-2"></i>
+                                Current role and responsibilities
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-indigo-500 mr-2"></i>
+                                Industry experience
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-indigo-500 mr-2"></i>
+                                Strengths and areas for improvement
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <button type="submit" class="group bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-10 rounded-xl text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center">
+                    <i class="fas fa-upload mr-3 text-xl"></i>
+                    Upload & Analyze CV
+                </button>
+            </div>
+        </form>
+
+        <!-- Upload Progress (hidden by default) -->
+        <div id="upload-progress" class="hidden mt-6">
+            <div class="bg-gray-200 rounded-full h-2">
+                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">Analyzing your CV...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('cv_file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        // Show file name
+        const label = document.querySelector('label[for="cv_file"]');
+        label.innerHTML = `<span class="text-lg font-medium text-green-700">Selected: ${file.name}</span>`;
+        
+        // Show upload progress
+        document.getElementById('upload-progress').classList.remove('hidden');
+    }
+});
+
+// Form submission with progress
+document.querySelector('form').addEventListener('submit', function(e) {
+    const progressBar = document.querySelector('#upload-progress .bg-blue-600');
+    const progressText = document.querySelector('#upload-progress p');
+    
+    // Simulate progress
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + '%';
+    }, 200);
+    
+    // Clear interval when form actually submits
+    setTimeout(() => {
+        clearInterval(interval);
+        progressBar.style.width = '100%';
+        progressText.textContent = 'Analysis complete!';
+    }, 2000);
+});
+</script>
+{% endblock %}

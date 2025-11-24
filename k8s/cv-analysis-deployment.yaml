@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cv-analysis-service
+  labels:
+    app: cv-analysis-service
+    microservice: cv-analysis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cv-analysis-service
+  template:
+    metadata:
+      labels:
+        app: cv-analysis-service
+        microservice: cv-analysis
+    spec:
+      containers:
+      - name: cv-analysis
+        image: careercoach-backend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "career_growth_app.settings"
+        - name: SERVICE_NAME
+          value: "cv-analysis"
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            python manage.py migrate --noinput
+            gunicorn --bind 0.0.0.0:8000 career_growth_app.wsgi:application
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+

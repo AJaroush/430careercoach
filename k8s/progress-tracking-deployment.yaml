@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: progress-tracking-service
+  labels:
+    app: progress-tracking-service
+    microservice: progress-tracking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: progress-tracking-service
+  template:
+    metadata:
+      labels:
+        app: progress-tracking-service
+        microservice: progress-tracking
+    spec:
+      containers:
+      - name: progress-tracking
+        image: careercoach-backend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "career_growth_app.settings"
+        - name: SERVICE_NAME
+          value: "progress-tracking"
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            python manage.py migrate --noinput
+            gunicorn --bind 0.0.0.0:8000 career_growth_app.wsgi:application
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+

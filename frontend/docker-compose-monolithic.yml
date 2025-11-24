@@ -1,0 +1,21 @@
+name: careercoach-monolithic
+
+services:
+  # Monolithic Frontend - All features in one service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.monolithic
+    container_name: careercoach-frontend-monolithic
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    networks:
+      - careercoach-monolithic-network
+    restart: unless-stopped
+
+networks:
+  careercoach-monolithic-network:
+    driver: bridge
+

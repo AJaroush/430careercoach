@@ -1,0 +1,68 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: careercoach-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  # CV Analysis Service
+  - host: cv-analysis.minikube.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cv-analysis-service
+            port:
+              number: 8000
+  
+  # Career Planning Service
+  - host: career-planning.minikube.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: career-planning-service
+            port:
+              number: 8000
+  
+  # Progress Tracking Service
+  - host: progress-tracking.minikube.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: progress-tracking-service
+            port:
+              number: 8000
+  
+  # User Management Service
+  - host: user-management.minikube.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: user-management-service
+            port:
+              number: 8000
+  
+  # Frontend
+  - host: careercoach.minikube.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: careercoach-frontend-service
+            port:
+              number: 80
+
