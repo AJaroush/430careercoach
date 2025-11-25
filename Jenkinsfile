@@ -45,6 +45,10 @@ pipeline {
                     sh """
                         export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:\$PATH"
                         eval \$(minikube docker-env)
+                        # Disable credential helpers for Minikube Docker
+                        export DOCKER_CONFIG=\${HOME}/.docker
+                        mkdir -p \${DOCKER_CONFIG}
+                        echo '{"credsStore":""}' > \${DOCKER_CONFIG}/config.json || true
                         docker info | head -5
                     """
                 }
@@ -58,6 +62,10 @@ pipeline {
                     sh """
                         export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:\$PATH"
                         eval \$(minikube docker-env)
+                        # Disable credential helpers for Minikube Docker
+                        export DOCKER_CONFIG=\${HOME}/.docker
+                        mkdir -p \${DOCKER_CONFIG}
+                        echo '{"credsStore":""}' > \${DOCKER_CONFIG}/config.json || true
                         docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} .
                         docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest
                         docker images | grep ${BACKEND_IMAGE} | head -3
@@ -74,6 +82,10 @@ pipeline {
                         sh """
                             export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:\$PATH"
                             eval \$(minikube docker-env)
+                            # Disable credential helpers for Minikube Docker
+                            export DOCKER_CONFIG=\${HOME}/.docker
+                            mkdir -p \${DOCKER_CONFIG}
+                            echo '{"credsStore":""}' > \${DOCKER_CONFIG}/config.json || true
                             docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} .
                             docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest
                             docker images | grep ${FRONTEND_IMAGE} | head -3
