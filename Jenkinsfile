@@ -1,41 +1,5 @@
 pipeline {
-    agent {
-        kubernetes {
-            yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  serviceAccountName: jenkins
-  containers:
-  - name: docker
-    image: docker:dind
-    securityContext:
-      privileged: true
-    volumeMounts:
-    - name: docker-sock
-      mountPath: /var/run
-    env:
-    - name: DOCKER_HOST
-      value: unix:///var/run/docker.sock
-  - name: kubectl
-    image: bitnami/kubectl:latest
-    command:
-    - sleep
-    args:
-    - 9999999
-    volumeMounts:
-    - name: kubeconfig
-      mountPath: /root/.kube
-  volumes:
-  - name: docker-sock
-    hostPath:
-      path: /var/run/docker.sock
-  - name: kubeconfig
-    hostPath:
-      path: /root/.kube
-"""
-        }
-    }
+    agent any
     
     environment {
         KUBERNETES_NAMESPACE = 'default'
@@ -75,33 +39,39 @@ spec:
         
         stage('Build Backend') {
             steps {
-                container('docker') {
-                    script {
-                        echo "Building backend Docker image..."
-                        sh """
-                            export DOCKER_HOST=unix:///var/run/docker.sock
-                            docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} .
-                            docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest
-                            docker images | grep ${BACKEND_IMAGE} | head -3
-                        """
-                    }
+                script {
+                    echo "Building backend Docker image..."
+                    sh """
+                        # Use Docker from host via mounted socket
+                        export DOCKER_HOST=unix:///var/run/docker.sock
+                        # Install docker CLI if not available
+                        if ! command -v docker &> /dev/null; then
+                            apk add --no-cache docker-cli || apt-get update && apt-get install -y docker.io || yum install -y docker
+                        fi
+                        docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} .
+                        docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest
+                        docker images | grep ${BACKEND_IMAGE} | head -3
+                    """
                 }
             }
         }
         
         stage('Build Frontend') {
             steps {
-                container('docker') {
-                    script {
-                        echo "Building frontend Docker image..."
-                        dir('frontend') {
-                            sh """
-                                export DOCKER_HOST=unix:///var/run/docker.sock
-                                docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} .
-                                docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest
-                                docker images | grep ${FRONTEND_IMAGE} | head -3
-                            """
-                        }
+                script {
+                    echo "Building frontend Docker image..."
+                    dir('frontend') {
+                        sh """
+                            # Use Docker from host via mounted socket
+                            export DOCKER_HOST=unix:///var/run/docker.sock
+                            # Install docker CLI if not available
+                            if ! command -v docker &> /dev/null; then
+                                apk add --no-cache docker-cli || apt-get update && apt-get install -y docker.io || yum install -y docker
+                            fi
+                            docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} .
+                            docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest
+                            docker images | grep ${FRONTEND_IMAGE} | head -3
+                        """
                     }
                 }
             }
@@ -109,68 +79,77 @@ spec:
         
         stage('Deploy to Kubernetes') {
             steps {
-                container('kubectl') {
-                    script {
-                        echo "Deploying to Kubernetes..."
-                        
-                        // Update image tags in deployment files (use latest for faster deployment)
-                        sh """
-                            # Update backend deployments
-                            for file in k8s/*-deployment.yaml; do
-                                if grep -q 'careercoach-backend' "\$file" 2>/dev/null; then
-                                    sed -i.bak 's|image: ${BACKEND_IMAGE}:.*|image: ${BACKEND_IMAGE}:latest|g' "\$file"
-                                fi
-                            done
-                            
-                            # Update frontend deployment
-                            if [ -f k8s/frontend-deployment.yaml ]; then
-                                sed -i.bak 's|image: ${FRONTEND_IMAGE}:.*|image: ${FRONTEND_IMAGE}:latest|g' k8s/frontend-deployment.yaml
+                script {
+                    echo "Deploying to Kubernetes..."
+                    
+                    // Update image tags in deployment files
+                    sh """
+                        # Update backend deployments
+                        for file in k8s/*-deployment.yaml; do
+                            if grep -q 'careercoach-backend' "\$file" 2>/dev/null; then
+                                sed -i.bak 's|image: ${BACKEND_IMAGE}:.*|image: ${BACKEND_IMAGE}:latest|g' "\$file"
                             fi
-                        """
+                        done
                         
-                        // Apply Kubernetes manifests
-                        sh """
-                            kubectl apply -f k8s/cv-analysis-deployment.yaml || true
-                            kubectl apply -f k8s/cv-analysis-service.yaml || true
-                            kubectl apply -f k8s/career-planning-deployment.yaml || true
-                            kubectl apply -f k8s/career-planning-service.yaml || true
-                            kubectl apply -f k8s/progress-tracking-deployment.yaml || true
-                            kubectl apply -f k8s/progress-tracking-service.yaml || true
-                            kubectl apply -f k8s/user-management-deployment.yaml || true
-                            kubectl apply -f k8s/user-management-service.yaml || true
-                            kubectl apply -f k8s/frontend-deployment.yaml || true
-                            kubectl apply -f k8s/frontend-service.yaml || true
-                        """
+                        # Update frontend deployment
+                        if [ -f k8s/frontend-deployment.yaml ]; then
+                            sed -i.bak 's|image: ${FRONTEND_IMAGE}:.*|image: ${FRONTEND_IMAGE}:latest|g' k8s/frontend-deployment.yaml
+                        fi
+                    """
+                    
+                    // Use kubectl via service account token
+                    sh """
+                        # Install kubectl if not available
+                        if ! command -v kubectl &> /dev/null; then
+                            curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                            chmod +x kubectl
+                            mv kubectl /usr/local/bin/ || export PATH=\$PWD:\$PATH
+                        fi
                         
-                        // Trigger rollout
-                        sh """
-                            kubectl rollout restart deployment/cv-analysis-service || true
-                            kubectl rollout restart deployment/career-planning-service || true
-                            kubectl rollout restart deployment/progress-tracking-service || true
-                            kubectl rollout restart deployment/user-management-service || true
-                            kubectl rollout restart deployment/careercoach-frontend || true
-                        """
+                        # Configure kubectl to use service account
+                        export KUBECONFIG=/var/run/secrets/kubernetes.io/serviceaccount/kubeconfig || true
+                        kubectl config set-cluster default --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt || true
+                        kubectl config set-credentials default --token=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) || true
+                        kubectl config set-context default --cluster=default --user=default || true
+                        kubectl config use-context default || true
                         
-                        // Wait for rollout
-                        sh """
-                            kubectl rollout status deployment/careercoach-frontend --timeout=120s || true
-                            kubectl rollout status deployment/cv-analysis-service --timeout=120s || true
-                        """
-                    }
+                        # Apply Kubernetes manifests
+                        kubectl apply -f k8s/cv-analysis-deployment.yaml || true
+                        kubectl apply -f k8s/cv-analysis-service.yaml || true
+                        kubectl apply -f k8s/career-planning-deployment.yaml || true
+                        kubectl apply -f k8s/career-planning-service.yaml || true
+                        kubectl apply -f k8s/progress-tracking-deployment.yaml || true
+                        kubectl apply -f k8s/progress-tracking-service.yaml || true
+                        kubectl apply -f k8s/user-management-deployment.yaml || true
+                        kubectl apply -f k8s/user-management-service.yaml || true
+                        kubectl apply -f k8s/frontend-deployment.yaml || true
+                        kubectl apply -f k8s/frontend-service.yaml || true
+                        
+                        # Trigger rollout
+                        kubectl rollout restart deployment/cv-analysis-service || true
+                        kubectl rollout restart deployment/career-planning-service || true
+                        kubectl rollout restart deployment/progress-tracking-service || true
+                        kubectl rollout restart deployment/user-management-service || true
+                        kubectl rollout restart deployment/careercoach-frontend || true
+                        
+                        # Wait for rollout
+                        kubectl rollout status deployment/careercoach-frontend --timeout=120s || true
+                        kubectl rollout status deployment/cv-analysis-service --timeout=120s || true
+                    """
                 }
             }
         }
         
         stage('Health Check') {
             steps {
-                container('kubectl') {
-                    script {
-                        echo "Performing health checks..."
-                        sh """
+                script {
+                    echo "Performing health checks..."
+                    sh """
+                        if command -v kubectl &> /dev/null; then
                             kubectl get pods -l app=careercoach-frontend || true
                             kubectl get svc | grep careercoach || true
-                        """
-                    }
+                        fi
+                    """
                 }
             }
         }
@@ -193,13 +172,13 @@ spec:
         failure {
             echo "❌ Pipeline failed!"
             script {
-                container('kubectl') {
-                    sh """
-                        echo "Checking pod status..."
+                sh """
+                    echo "Checking pod status..."
+                    if command -v kubectl &> /dev/null; then
                         kubectl get pods || true
                         kubectl get events --sort-by='.lastTimestamp' | tail -10 || true
-                    """
-                }
+                    fi
+                """
             }
         }
         always {
