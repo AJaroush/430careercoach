@@ -12,6 +12,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Debug: Verify msalInstance file exists
+RUN ls -la src/lib/msalInstance.ts || echo "File not found!"
+
 # Build the application
 RUN npm run build
 
