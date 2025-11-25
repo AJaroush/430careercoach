@@ -207,3 +207,41 @@ kubectl delete -f k8s/
 - For production, you'd want separate databases for each microservice
 - The frontend needs to be configured to point to the correct service URLs
 
+## CI/CD with Jenkins
+
+The project includes Jenkins for continuous integration and deployment. See [QUICK_START.md](./QUICK_START.md) for a quick setup guide.
+
+### Deploy Jenkins
+
+```bash
+cd k8s
+./deploy-jenkins.sh
+```
+
+Access Jenkins at `http://jenkins.minikube.local` (after adding to `/etc/hosts`).
+
+For detailed Jenkins setup, see [JENKINS_SETUP.md](./JENKINS_SETUP.md).
+
+## NGINX Ingress Controller
+
+The project includes a dedicated NGINX Ingress Controller deployment. This provides more control and features compared to Minikube's built-in ingress addon.
+
+### Deploy NGINX Ingress Controller
+
+```bash
+cd k8s
+./deploy-ingress-controller.sh
+```
+
+For detailed Ingress Controller setup, see [INGRESS_CONTROLLER_SETUP.md](./INGRESS_CONTROLLER_SETUP.md).
+
+### Using Minikube Ingress Addon (Alternative)
+
+You can also use Minikube's built-in ingress addon:
+
+```bash
+minikube addons enable ingress
+```
+
+Note: The project's ingress.yaml is configured for NGINX Ingress Controller. If using Minikube's addon, you may need to adjust the `ingressClassName`.
+
