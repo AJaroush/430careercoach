@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { MsalProvider } from "@azure/msal-react";
-import { msalInstance } from "./lib/msalInstance";
+import { msalInstance } from "./lib/msalInstance.js";
 import { ThemeProvider } from "./components/theme-provider";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { AppLayout } from "./components/app-layout";
