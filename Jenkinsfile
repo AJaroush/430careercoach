@@ -132,8 +132,8 @@ pipeline {
                     // Wait for rollout with shorter timeout (2 minutes max)
                     sh """
                         export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:\$PATH"
-                        timeout 120 kubectl rollout status deployment/careercoach-frontend --timeout=120s || true
-                        timeout 120 kubectl rollout status deployment/cv-analysis-service --timeout=120s || true
+                        kubectl rollout status deployment/careercoach-frontend --timeout=120s || true
+                        kubectl rollout status deployment/cv-analysis-service --timeout=120s || true
                     """
                 }
             }
