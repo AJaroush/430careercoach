@@ -20,6 +20,9 @@ spec:
       - name: jenkins
         image: jenkins/jenkins:lts
         imagePullPolicy: IfNotPresent
+        # Note: For production, build custom image with docker and kubectl:
+        # docker build -f k8s/jenkins-dockerfile -t jenkins-custom:lts .
+        # Then use: image: jenkins-custom:lts
         ports:
         - containerPort: 8080
           name: http-port

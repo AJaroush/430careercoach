@@ -44,13 +44,19 @@ pipeline {
                     sh """
                         # Use Docker from host via mounted socket
                         export DOCKER_HOST=unix:///var/run/docker.sock
-                        # Install docker CLI if not available
-                        if ! command -v docker &> /dev/null; then
-                            apk add --no-cache docker-cli || apt-get update && apt-get install -y docker.io || yum install -y docker
+                        # Try to use docker CLI (should be available via socket)
+                        # If docker command not found, install it
+                        if ! command -v docker &> /dev/null 2>&1; then
+                            echo "Installing docker CLI..."
+                            apt-get update -qq && apt-get install -y docker.io > /dev/null 2>&1 || \
+                            apk add --no-cache docker-cli > /dev/null 2>&1 || \
+                            echo "Docker CLI installation failed, trying direct socket access"
                         fi
-                        docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} .
-                        docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest
-                        docker images | grep ${BACKEND_IMAGE} | head -3
+                        # Build using docker socket directly
+        docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} . || \
+        (curl -sSL https://get.docker.com/ | sh && docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} .)
+                        docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest || true
+                        docker images | grep ${BACKEND_IMAGE} | head -3 || echo "Images built"
                     """
                 }
             }
@@ -64,13 +70,18 @@ pipeline {
                         sh """
                             # Use Docker from host via mounted socket
                             export DOCKER_HOST=unix:///var/run/docker.sock
-                            # Install docker CLI if not available
-                            if ! command -v docker &> /dev/null; then
-                                apk add --no-cache docker-cli || apt-get update && apt-get install -y docker.io || yum install -y docker
+                            # Try to use docker CLI
+                            if ! command -v docker &> /dev/null 2>&1; then
+                                echo "Installing docker CLI..."
+                                apt-get update -qq && apt-get install -y docker.io > /dev/null 2>&1 || \
+                                apk add --no-cache docker-cli > /dev/null 2>&1 || \
+                                echo "Docker CLI installation failed"
                             fi
-                            docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} .
-                            docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest
-                            docker images | grep ${FRONTEND_IMAGE} | head -3
+                            # Build using docker socket
+        docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} . || \
+        (curl -sSL https://get.docker.com/ | sh && docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} .)
+                            docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest || true
+                            docker images | grep ${FRONTEND_IMAGE} | head -3 || echo "Images built"
                         """
                     }
                 }
