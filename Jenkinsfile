@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'node18'   // Make sure you added this in Global Tool Configuration
-    }
-
     triggers {
         githubPush()
     }
@@ -13,24 +9,29 @@ pipeline {
 
         stage('Install dependencies') {
             steps {
-                dir('frontend') {
-                    sh 'npm install'
-                }
+                // add Node path so Jenkins can see npm
+                sh '''
+                export PATH=/opt/homebrew/bin:$PATH
+
+                cd frontend
+                npm install
+                '''
             }
         }
 
         stage('Run Vite dev server') {
             steps {
                 sh '''
+                export PATH=/opt/homebrew/bin:$PATH
+
                 # stop previous instance if exists
                 pm2 delete careercoach || true
 
                 cd frontend
 
-                # start Vite dev server exactly like npm run dev
+                # start Vite dev server
                 pm2 start npm --name careercoach -- run dev
 
-                # save PM2 process list
                 pm2 save
                 '''
             }
