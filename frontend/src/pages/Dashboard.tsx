@@ -154,7 +154,7 @@ export default function Dashboard() {
             <div className="p-2 bg-white/20 rounded-full">
               <Sparkles className="h-6 w-6" />
             </div>
-            <h1 className="text-4xl font-bold">hola, {user.name || 'Rockstar'}! 🚀</h1>
+            <h1 className="text-4xl font-bold">Hello World! {user.name || 'Rockstar'}! 🚀</h1>
           </div>
           <p className="text-xl text-white/90 mb-6">
             Ready to level up your career? Let's make today count!
