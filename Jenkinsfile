@@ -1,181 +1,23 @@
 pipeline {
     agent any
-    
-    environment {
-        KUBERNETES_NAMESPACE = 'default'
-        BACKEND_IMAGE = 'careercoach-backend'
-        FRONTEND_IMAGE = 'careercoach-frontend'
-        IMAGE_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT.take(7)}"
-        PATH = "/opt/homebrew/bin:/opt/homebrew/sbin:${env.PATH}"
-    }
-    
-    options {
-        // Build timeout of 10 minutes
-        timeout(time: 10, unit: 'MINUTES')
-        // Keep only last 10 builds
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-    }
-    
+
     triggers {
-        // Poll SCM every 2 minutes for changes
-        pollSCM('H/2 * * * *')
+        githubPush()  // automatically runs when GitHub updates
     }
-    
+
     stages {
-        stage('Checkout') {
+        stage('Build') {
             steps {
-                checkout scm
-                script {
-                    env.GIT_COMMIT_SHORT = sh(
-                        script: 'git rev-parse --short HEAD',
-                        returnStdout: true
-                    ).trim()
-                    env.GIT_COMMIT = sh(
-                        script: 'git rev-parse HEAD',
-                        returnStdout: true
-                    ).trim()
-                }
+                echo "Building application..."
+                # put your build steps here
             }
         }
-        
-        stage('Build Backend') {
+
+        stage('Deploy') {
             steps {
-                script {
-                    echo "Building backend Docker image..."
-                    sh """
-                        export PATH="${env.PATH}"
-                        # Configure Docker to use Minikube's Docker daemon
-                        eval \$(minikube docker-env)
-                        # Disable credential helpers for Minikube Docker
-                        export DOCKER_CONFIG=\${HOME}/.docker
-                        mkdir -p \${DOCKER_CONFIG}
-                        echo '{"credsStore":""}' > \${DOCKER_CONFIG}/config.json || true
-                        # Build Docker image
-                        docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} .
-                        docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest
-                        docker images | grep ${BACKEND_IMAGE} | head -3
-                    """
-                }
+                echo "Deploying application..."
+                # put deployment commands here
             }
-        }
-        
-        stage('Build Frontend') {
-            steps {
-                script {
-                    echo "Building frontend Docker image..."
-                    dir('frontend') {
-                        sh """
-                            export PATH="${env.PATH}"
-                            # Configure Docker to use Minikube's Docker daemon
-                            eval \$(minikube docker-env)
-                            # Disable credential helpers for Minikube Docker
-                            export DOCKER_CONFIG=\${HOME}/.docker
-                            mkdir -p \${DOCKER_CONFIG}
-                            echo '{"credsStore":""}' > \${DOCKER_CONFIG}/config.json || true
-                            # Build Docker image
-                            docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} .
-                            docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest
-                            docker images | grep ${FRONTEND_IMAGE} | head -3
-                        """
-                    }
-                }
-            }
-        }
-        
-        stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    echo "Deploying to Kubernetes..."
-                    
-                    // Update image tags in deployment files
-                    sh """
-                        export PATH="${env.PATH}"
-                        # Update backend deployments
-                        for file in k8s/*-deployment.yaml; do
-                            if grep -q 'careercoach-backend' "\$file" 2>/dev/null; then
-                                sed -i.bak 's|image: ${BACKEND_IMAGE}:.*|image: ${BACKEND_IMAGE}:latest|g' "\$file"
-                            fi
-                        done
-                        
-                        # Update frontend deployment
-                        if [ -f k8s/frontend-deployment.yaml ]; then
-                            sed -i.bak 's|image: ${FRONTEND_IMAGE}:.*|image: ${FRONTEND_IMAGE}:latest|g' k8s/frontend-deployment.yaml
-                        fi
-                    """
-                    
-                    // Apply Kubernetes manifests
-                    sh """
-                        export PATH="${env.PATH}"
-                        # Apply Kubernetes manifests
-                        kubectl apply -f k8s/cv-analysis-deployment.yaml || true
-                        kubectl apply -f k8s/cv-analysis-service.yaml || true
-                        kubectl apply -f k8s/career-planning-deployment.yaml || true
-                        kubectl apply -f k8s/career-planning-service.yaml || true
-                        kubectl apply -f k8s/progress-tracking-deployment.yaml || true
-                        kubectl apply -f k8s/progress-tracking-service.yaml || true
-                        kubectl apply -f k8s/user-management-deployment.yaml || true
-                        kubectl apply -f k8s/user-management-service.yaml || true
-                        kubectl apply -f k8s/frontend-deployment.yaml || true
-                        kubectl apply -f k8s/frontend-service.yaml || true
-                        
-                        # Trigger rollout
-                        kubectl rollout restart deployment/cv-analysis-service || true
-                        kubectl rollout restart deployment/career-planning-service || true
-                        kubectl rollout restart deployment/progress-tracking-service || true
-                        kubectl rollout restart deployment/user-management-service || true
-                        kubectl rollout restart deployment/careercoach-frontend || true
-                        
-                        # Wait for rollout
-                        kubectl rollout status deployment/careercoach-frontend --timeout=120s || true
-                        kubectl rollout status deployment/cv-analysis-service --timeout=120s || true
-                    """
-                }
-            }
-        }
-        
-        stage('Health Check') {
-            steps {
-                script {
-                    echo "Performing health checks..."
-                    sh """
-                        export PATH="${env.PATH}"
-                        kubectl get pods -l app=careercoach-frontend || true
-                        kubectl get svc | grep careercoach || true
-                    """
-                }
-            }
-        }
-    }
-    
-    post {
-        success {
-            echo "✅ Pipeline succeeded! Application deployed."
-            script {
-                sh """
-                    echo "=========================================="
-                    echo "Deployment successful!"
-                    echo "Build Number: ${IMAGE_TAG}"
-                    echo "Git Commit: ${env.GIT_COMMIT_SHORT}"
-                    echo "Deployment Time: \$(date)"
-                    echo "=========================================="
-                """
-            }
-        }
-        failure {
-            echo "❌ Pipeline failed!"
-            script {
-                sh """
-                    export PATH="${env.PATH}"
-                    echo "Checking pod status..."
-                    kubectl get pods || true
-                    kubectl get events --sort-by='.lastTimestamp' | tail -10 || true
-                """
-            }
-        }
-        always {
-            // Clean workspace but keep logs
-            cleanWs(cleanWhenNotBuilt: false, deleteDirs: true)
         }
     }
 }
-
