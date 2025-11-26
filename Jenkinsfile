@@ -6,17 +6,34 @@ pipeline {
     }
 
     stages {
-        stage('Build') {
+        stage('Install dependencies') {
             steps {
-                echo "Building application..."
-                // build commands go here
+                dir('frontend') {
+                    sh 'npm install'
+                }
             }
         }
 
-        stage('Deploy') {
+        stage('Build React app') {
             steps {
-                echo "Deploying application..."
-                // deploy commands go here
+                dir('frontend') {
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Deploy locally') {
+            steps {
+                sh '''
+                # kill any previously running server
+                pkill -f "serve" || true
+
+                # install static server if not installed
+                npm install -g serve
+
+                # run the build in background
+                nohup serve -s frontend/build -l 3000 &
+                '''
             }
         }
     }
