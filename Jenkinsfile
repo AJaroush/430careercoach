@@ -1,11 +1,16 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'node18'   // Make sure you added this in Global Tool Configuration
+    }
+
     triggers {
         githubPush()
     }
 
     stages {
+
         stage('Install dependencies') {
             steps {
                 dir('frontend') {
@@ -14,25 +19,19 @@ pipeline {
             }
         }
 
-        stage('Build React app') {
-            steps {
-                dir('frontend') {
-                    sh 'npm run build'
-                }
-            }
-        }
-
-        stage('Deploy locally') {
+        stage('Run Vite dev server') {
             steps {
                 sh '''
-                # kill any previously running server
-                pkill -f "serve" || true
+                # stop previous instance if exists
+                pm2 delete careercoach || true
 
-                # install static server if not installed
-                npm install -g serve
+                cd frontend
 
-                # run the build in background
-                nohup serve -s frontend/dist -l 3000 &
+                # start Vite dev server exactly like npm run dev
+                pm2 start npm --name careercoach -- run dev
+
+                # save PM2 process list
+                pm2 save
                 '''
             }
         }
