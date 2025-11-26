@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     triggers {
-        githubPush()
+        // check GitHub every 2 minutes
+        pollSCM('H/2 * * * *')
     }
 
     stages {
 
         stage('Install dependencies') {
             steps {
-                // add Node path so Jenkins can see npm
                 sh '''
                 export PATH=/opt/homebrew/bin:$PATH
 
@@ -24,12 +24,10 @@ pipeline {
                 sh '''
                 export PATH=/opt/homebrew/bin:$PATH
 
-                # stop previous instance if exists
                 pm2 delete careercoach || true
 
                 cd frontend
 
-                # start Vite dev server
                 pm2 start npm --name careercoach -- run dev
 
                 pm2 save
