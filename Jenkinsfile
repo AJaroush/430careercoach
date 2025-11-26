@@ -32,7 +32,7 @@ pipeline {
                 npm install -g serve
 
                 # run the build in background
-                nohup serve -s frontend/build -l 3000 &
+                nohup serve -s frontend/dist -l 3000 &
                 '''
             }
         }
